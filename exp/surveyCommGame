@@ -1,0 +1,33 @@
+#!/usr/bin/env octave
+#
+# Octave script for sarting any of the surveys.
+# To be called from the command line.
+#
+# Usage is: survey "pairNo" "labName" "type" "BGroundNo"
+#
+# pairNo    - Int, pair number
+# labName   - Str, one of "Mordor" or "Gondor"
+# type      - Str, one of "BGfirst", "BGsecond", "BGrest", "freeConv", "playback", "IRI", "FELNE8", "BFI_10"
+# BGroundNo - Int, one of 0:7, round number in Bargaining Game 
+#
+# Outputs are saved into the results dir of the pair under /home/mordor/CommGame/
+#
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+type = arg_list{3};
+if length(arg_list) == 4;
+    BGroundNo = str2double(arg_list{4});
+else
+    BGroundNo = [];
+end
+
+# call the survey function
+if isempty(BGroundNo)
+    survey_mouseV3(pairNo, labName, type);
+else
+    survey_mouseV3(pairNo, labName, type, BGroundNo);
+end

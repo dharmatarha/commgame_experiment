@@ -1,0 +1,171 @@
+#!/bin/bash
+#
+# USAGE: ./timingTest.sh PAIRNO LABNAME
+#
+# Script testing the system clock drift and network transmission time across local and remote machines.
+#
+# Uses SSH to run a simple python3 function on both ends, estimates timings from its output.
+#
+# Inputs:
+# PAIRNO 	- int, 1:99
+# LABNAME 	- str, "Mordor" or "Gondor"
+#
+# 
+
+
+echo -e "\nInput arg PAIRNO: "$1
+echo "Input arg LABNAME: "$2
+
+# check for input args
+if [[ $# -ne 2 ]] ; then
+    echo "Input args PAIRNO and LABNAME are required!"
+    exit 1
+fi
+if (( $1 > 0 && $1 < 1000)) ; then
+    PAIRNO=$1
+else
+    echo "Input arg PAIRNO should be integer between 1 and 999!"
+    exit 2
+fi    
+if [[ $2 == "Mordor" ]] || [[ $2 == "Gondor" ]] ; then
+    LABNAME=$2
+else
+    echo "Input arg LABNAME should be either Mordor or Gondor!"
+    exit 3
+fi
+
+# check for result dir for pair
+RESULTDIR="/home/mordor/CommGame/pair"$PAIRNO
+if [[ -d "$RESULTDIR" ]] ; then
+    echo -e "\nResult folder for pair "$PAIRNO" already exists."
+else
+    MKDIR_RETVAL=$(mkdir $RESULTDIR)
+    echo $MKDIR_RETVAL
+    if [[ -z "$MKDIR_RETVAL" ]]; then
+        echo -e "\nCreated results directory for pair "$PAIRNO
+    else
+        echo -e "\nFailed to create results directory at "$RESULTDIR"!"
+        exit 4
+    fi
+fi     
+
+# hardcoded expected IP value for motion PC
+MOTIONPC_IP="192.168.0.50"
+# hardcoded threshold for issuing timing warning, in ms
+SYNC_THRESHOLD=10
+
+# assign expected IPs on LAN based on LABNAME
+if [[ $LABNAME == "Mordor" ]] ; then
+    LOCAL_IP="192.168.0.10"
+    REMOTE_IP="192.168.0.20"
+    OTHERLAB="Gondor"
+elif [[ $LABNAME == "Gondor" ]] ; then
+    LOCAL_IP="192.168.0.20"
+    REMOTE_IP="192.168.0.10"
+    OTHERLAB="Mordor"
+fi
+
+
+# get current time for filenames, down to minutes
+CURRENT_TIME=$(date +%m_%d_%H_%M)
+# specify files for storing timing function (python scripts) outputs
+REMOTE_TIMINGFILE_CONTROLS=$RESULTDIR"/remoteTimingControls_"$OTHERLAB"_"$CURRENT_TIME".txt"
+LOCAL_TIMINGFILE_CONTROLS=$RESULTDIR"/localTimingControls_"$LABNAME"_"$CURRENT_TIME".txt"
+REMOTE_TIMINGFILE_MOTION=$RESULTDIR"/remoteTimingMotion_MotionPC_"$CURRENT_TIME".txt"
+LOCAL_TIMINGFILE_MOTION=$RESULTDIR"/localTimingMotion_"$LABNAME"_"$CURRENT_TIME".txt"
+
+
+###########################################################
+# CHECK TIMING ACROSS MORDOR AND GONDOR LAB CONTROL PCS ###
+###########################################################
+
+echo -e "\n######################################################################################"
+echo -e "###################   CHECKING TIMING ACROSS CONTROL PCS   ###########################"
+echo -e "######################################################################################"
+
+# run ssh and local versions of timing tests
+echo -e "\nRunning the timing functions across Mordor and Gondor lab control PCs, \nthis takes a few seconds...\n"
+ssh "mordor@"$REMOTE_IP "python3 ~/CommGame/bin/syncTestUDP.py -i "$LOCAL_IP > $REMOTE_TIMINGFILE_CONTROLS &
+python3 ~/CommGame/bin/syncTestUDP.py -i $REMOTE_IP > $LOCAL_TIMINGFILE_CONTROLS
+wait
+echo -e "\nRELEVANT OUTPUT FROM REMOTE ("$REMOTE_TIMINGFILE_CONTROLS")"
+tail -4 $REMOTE_TIMINGFILE_CONTROLS | head -2
+echo -e "\nRELEVANT OUTPUT FROM LOCAL ("$LOCAL_TIMINGFILE_CONTROLS")"
+tail -4 $LOCAL_TIMINGFILE_CONTROLS | head -2
+
+# calculate transmission time and clock drift
+# extract first the two median values reported
+REMOTE_TIME=$(tail -3 $REMOTE_TIMINGFILE_CONTROLS | head -1 | bc -l )
+LOCAL_TIME=$(tail -3 $LOCAL_TIMINGFILE_CONTROLS | head -1 | bc -l )
+TRANSMISSION_TIME=$(echo "scale=8; ("$REMOTE_TIME" + "$LOCAL_TIME")/2*1000" | bc -l)
+CLOCK_DRIFT=$(echo "scale=8; ("$LOCAL_TIME" - "$REMOTE_TIME")/2*1000" | bc -l)
+echo -e "\nTransmission time was "$TRANSMISSION_TIME" ms"
+echo -e "\nClock drift was "$CLOCK_DRIFT" ms (positive value means local clock ahead of remote)"
+# get absolute values
+ABS_TRANSMISSION_TIME=$(echo $TRANSMISSION_TIME"*(("$TRANSMISSION_TIME">0) - ("$TRANSMISSION_TIME"<0))" | bc -l )
+ABS_CLOCK_DRIFT=$(echo $CLOCK_DRIFT"*(("$CLOCK_DRIFT">0) - ("$CLOCK_DRIFT"<0))" | bc -l )
+if [[ $(echo $ABS_TRANSMISSION_TIME"<"$SYNC_THRESHOLD | bc) == 1 ]] && [[ $(echo $ABS_CLOCK_DRIFT"<"$SYNC_THRESHOLD | bc) == 1 ]] ; then
+    echo -e "\nThese numbers are OK!"
+    CONTROLPCS_OUTCOME="OK"
+else
+    echo -e "\nAt least one of these numbers is NOT OK! Make a note!"
+    CONTROLPCS_OUTCOME="NOT OK!"
+fi
+
+
+#####################################################################
+# CHECK TIMING ACROSS MORDOR LAB CONTROL PC AND MOTION CONTROL PC ###
+#####################################################################
+
+echo -e "\n#######################################################################################"
+echo -e "##############   CHECKING TIMING ACROSS MOTION AND CONTROL PC   #######################"
+echo -e "#######################################################################################"
+
+# run ssh and local versions of timing tests
+echo -e "\nRunning the timing functions across Mordor control PC and motion control PC, \nthis takes a few seconds...\n"
+python3 ~/CommGame/bin/syncTestUDP.py -i $MOTIONPC_IP > $LOCAL_TIMINGFILE_MOTION & ssh "mordor@"$MOTIONPC_IP "python Documents\syncTestUDP.py -i "$LOCAL_IP > $REMOTE_TIMINGFILE_MOTION
+wait
+echo -e "\nRELEVANT OUTPUT FROM REMOTE ("$REMOTE_TIMINGFILE_MOTION")"
+tail -4 $REMOTE_TIMINGFILE_MOTION | head -2
+echo -e "\nRELEVANT OUTPUT FROM LOCAL ("$LOCAL_TIMINGFILE_MOTION")"
+tail -4 $LOCAL_TIMINGFILE_MOTION | head -2
+
+# calculate transmission time and clock drift
+# extract first the two median values reported
+REMOTE_TIME=$(tail -3 $REMOTE_TIMINGFILE_MOTION | head -1 )
+# REMOTE_TIME=${REMOTE_TIME//[!0-9.-]/} | bc -l
+# Delete trailing white spaces
+REMOTE_TIME="${REMOTE_TIME%"${REMOTE_TIME##*[![:space:]]}"}"  
+LOCAL_TIME=$(tail -3 $LOCAL_TIMINGFILE_MOTION | head -1 )
+# LOCAL_TIME=${LOCAL_TIME//[!0-9.-]/} | bc -l
+
+TRANSMISSION_TIME=$(echo "scale=8; ("$REMOTE_TIME" + "$LOCAL_TIME")/2*1000" | bc -l)
+CLOCK_DRIFT=$(echo "scale=8; ("$LOCAL_TIME" - "$REMOTE_TIME")/2*1000" | bc -l)
+echo -e "\nTransmission time was "$TRANSMISSION_TIME" ms"
+echo -e "\nClock drift was "$CLOCK_DRIFT" ms (positive value means local clock ahead of remote)"
+# get absolute values
+ABS_TRANSMISSION_TIME=$(echo $TRANSMISSION_TIME"*(("$TRANSMISSION_TIME">0) - ("$TRANSMISSION_TIME"<0))" | bc -l )
+ABS_CLOCK_DRIFT=$(echo $CLOCK_DRIFT"*(("$CLOCK_DRIFT">0) - ("$CLOCK_DRIFT"<0))" | bc -l )
+if [[ $(echo $ABS_TRANSMISSION_TIME"<"$SYNC_THRESHOLD | bc) == 1 ]] && [[ $(echo $ABS_CLOCK_DRIFT"<"$SYNC_THRESHOLD | bc) == 1 ]] ; then
+    echo -e "\nThese numbers are OK!"
+    MOTIONPC_OUTCOME="OK"
+else
+    echo -e "\nAt least one of these numbers is NOT OK! Make a note!"
+    MOTIONPC_OUTCOME="NOT OK!"
+fi
+
+
+# Display summary report
+
+echo -e "\n\n#############################################################################################"
+echo -e "\n\nSUMMARY:"
+echo -e "Timing across control PCs: "$CONTROLPCS_OUTCOME
+echo -e "Timing across motion and control PC: "$MOTIONPC_OUTCOME"\n"
+
+
+exit 0
+
+
+
+
+

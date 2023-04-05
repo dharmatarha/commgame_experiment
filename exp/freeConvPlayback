@@ -1,0 +1,19 @@
+#!/usr/bin/env octave
+#
+#
+# Octave script for freeConv playback task.
+# To be called from the command line.
+#
+# Input arguments are PAIRNO and LABNAME.
+#
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]); 
+
+# call main function
+subjectiveVideoPlayback_V5(pairNo, labName)

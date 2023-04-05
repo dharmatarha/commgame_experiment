@@ -1,0 +1,94 @@
+#!/bin/bash
+# Script to copy data collected for PAIRNO from control PCs and motion PC to data_hdd folder
+#
+# USAGE: endCopy PAIRNO
+#
+# positional argument should be PAIRNO (int, [1:999])
+#
+# RUN IT FROM MORDOR PC!
+#
+
+
+echo -e "\nInput arg PAIRNO: "$1
+echo -e "\nMAKE SURE YOU RUN THIS SCRIPT FROM THE MORDOR PC!"
+
+# check for input args
+if [[ $# -ne 1 ]] ; then
+    echo "Input arg PAIRNO is required!"
+    exit 1
+fi
+if (( $1 > 0 && $1 < 1000)) ; then
+    PAIRNO=$1
+else
+    echo "Input arg PAIRNO should be integer between 1 and 999!"
+    exit 2
+fi    
+
+
+# hardcoded expected IP value for Gondor PC
+GONDOR_IP="192.168.0.20"
+# hardcoded expected IP value for motion PC
+MOTIONPC_IP="192.168.0.50"
+
+
+# high-level folder at /media/mordor/data_hdd/adamb/CommGameData/
+RESULTDIR="/media/mordor/data_hdd/adamb/CommGameData/pair"$PAIRNO
+
+# expected location of behav data, on both control PCs
+BEHAVSRCDIR="/home/mordor/CommGame/pair"$PAIRNO"/"
+# target locations for behav data
+BEHAVTARGETGONDOR=$RESULTDIR"/pair"$PAIRNO"_Gondor/pair"$PAIRNO"_Gondor_behav/"
+BEHAVTARGETMORDOR=$RESULTDIR"/pair"$PAIRNO"_Mordor/pair"$PAIRNO"_Mordor_behav/"
+
+# expected location of pupil data on Mordor control PC
+# we do not specify the date, and hope that there is only one recording folder for given pair number...
+PUPILSRCDIRMORDOR="/home/mordor/CommGame/PupilLabs/pair"$PAIRNO"M_*"
+PUPILSRCDIRGONDOR="/home/mordor/recordings/pair"$PAIRNO"M_*"
+# target locations for pupil data
+PUPILTARGETGONDOR=$RESULTDIR"/pair"$PAIRNO"_Gondor/pair"$PAIRNO"_Gondor_pupil/"
+PUPILTARGETMORDOR=$RESULTDIR"/pair"$PAIRNO"_Mordor/pair"$PAIRNO"_Mordor_pupil/"
+
+# expected location of motion data on Motion PC
+# .raw and .xml files
+MOTIONSRCDIR="Documents/Noitom/Axis?Neuron/Motion?Files/CommExp_pair"$PAIRNO"_*"
+# .txt files
+MOTIONTXTSRCDIR="pair"$PAIRNO"_*axis.txt"
+# target location of motion data
+MOTIONDIR=$RESULTDIR"/pair"$PAIRNO"_motion"
+
+# target locations for EEG data
+EEGTARGETGONDOR=$RESULTDIR"/pair"$PAIRNO"_Gondor/pair"$PAIRNO"_Gondor_eeg/"
+EEGTARGETMORDOR=$RESULTDIR"/pair"$PAIRNO"_Mordor/pair"$PAIRNO"_Mordor_eeg/"
+
+
+# create all target folders for all modalities and both labs
+ALLDIRS=($BEHAVTARGETGONDOR $BEHAVTARGETMORDOR $PUPILTARGETGONDOR $PUPILTARGETMORDOR $EEGTARGETGONDOR $EEGTARGETMORDOR $MOTIONDIR)
+for TARGETDIR in ${ALLDIRS[@]}; do
+    # option -p creates parent dirs as well (whole path)
+    MKDIR_RETVAL=$(mkdir -p $TARGETDIR)
+    if [[ -z "$MKDIR_RETVAL" ]]; then
+        echo -e "\nCreated result folder "$TARGETDIR" or it has already existed"
+    else
+        echo -e "\nFailed to create results directory at "$TARGETDIR"!"
+        exit 3
+    fi
+done
+
+
+# copy behav data
+echo -e "\nCopying behavioral data from Gondor control PC..."
+scp -i ~/.ssh/id_rsa.pub "mordor@"$GONDOR_IP":"$BEHAVSRCDIR"/*" $BEHAVTARGETGONDOR
+echo -e "\nCopying behavioral data from Mordor control PC..."
+cp $BEHAVSRCDIR"/*" $BEHAVTARGETMORDOR
+
+# copy pupil data
+echo -e "\nCopying pupil data from Gondor control PC..."
+scp -r -i ~/.ssh/id_rsa.pub "mordor@"$GONDOR_IP":"$PUPILSRCDIRGONDOR $PUPILTARGETGONDOR
+echo -e "\nCopying pupil data from Mordor control PC..."
+cp -r $PUPILSRCDIRMORDOR $PUPILTARGETMORDOR
+
+# copy motion data 
+scp -i ~/.ssh/id_rsa.pub "mordor@"$MOTIONPC_IP":"$MOTIONSRCDIR $MOTIONDIR"/"
+scp -i ~/.ssh/id_rsa.pub "mordor@"$MOTIONPC_IP":"$MOTIONTXTSRCDIR $MOTIONDIR"/"
+
+

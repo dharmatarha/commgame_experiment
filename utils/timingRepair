@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# USAGE: timingRepair
+# 
+# Script to run in case timingTest reports problems. 
+#
+# RUN IT FROM MORDOR CONTROL PC!!!
+#
+# Does two things:
+# (1) Restarts the chrony client on the opposite control PC
+# (2) Reboots the Motion control PC
+#
+
+echo -e "\nCalled timingRepair utility!"
+echo -e "\nWill restart chrony on Gondor control PC and reboot Motion control PC."
+
+# hardcoded expected IP values
+MOTIONPC_IP="192.168.0.50"
+EXPECTED_IP="192.168.0.10"
+REMOTE_IP="192.168.0.20"
+
+# Check if local machine is the mordor machine: check IP.
+# get the first IP address for "inet" in the "enp9s0" section   
+echo -e "\nChecking IP address..."
+REAL_IP=$(ip address | grep -A3 enp9s0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+# compare real ip to expected value
+if [ $REAL_IP == $EXPECTED_IP ] ; then
+    echo "IP address is "$REAL_IP", CORRECT, running from Mordor control PC."
+else
+    echo "IP address is "$REAL_IP", INCORRECT, not running from Mordor control PC?"
+    exit 2
+fi
+
+# Restart chrony on Gondor control PC
+echo -e "\nRestarting chrony..."
+ssh -t "mordor@"$REMOTE_IP "sudo systemctl restart chrony"
+wait
+
+# Reboot Motion control PC
+echo -e "\nRebooting motion control machine..."
+ssh "mordor@"$MOTIONPC_IP "shutdown -r -t 0"
+
+echo -e "\nDone!"

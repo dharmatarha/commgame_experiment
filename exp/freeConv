@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# USAGE: ./freeConv.sh PAIRNO LABNAME
+# positional argments should be PAIRNO (int) and LABNAME (str, Gondor or Mordor)
+#
+# Script to start all elements of the free conversation task
+#
+
+echo -e "\nInput arg PAIRNO: "$1
+echo "Input arg LABNAME: "$2
+
+# check for input args
+if [[ $# -ne 2 ]] ; then
+    echo "Input args PAIRNO and LABNAME are required!"
+    exit 1
+fi
+if (( $1 > 0 && $1 < 1000)) ; then
+    PAIRNO=$1
+else
+    echo "Input arg PAIRNO should be integer between 1 and 999!"
+    exit 2
+fi    
+if [[ $2 == "Mordor" ]] || [[ $2 == "Gondor" ]] ; then
+    LABNAME=$2
+else
+    echo "Input arg LABNAME should be either Mordor or Gondor!"
+    exit 3
+fi
+
+
+# check for result dir for pair
+RESULTDIR="/home/mordor/CommGame/pair"$PAIRNO
+if [[ -d "$RESULTDIR" ]] ; then
+    echo -e "\nResult folder for pair "$PAIRNO" already exists."
+else
+    MKDIR_RETVAL=$(mkdir $RESULTDIR)
+    if [[ -z "$MKDIR_RETVAL" ]] ; then
+        echo -e "\nCreated results directory for pair "$PAIRNO
+    else
+        echo -e "\nFailed to create results directory at "$RESULTDIR"!"
+        exit 4
+    fi
+fi     
+    
+
+# set IP of remote PC based on lab names
+if [ "$LABNAME" == "Mordor" ]; then
+  REMOTEIP="192.168.0.20"
+elif [ "$LABNAME" == "Gondor" ]; then
+  REMOTEIP="192.168.0.10"
+fi
+
+# go to relevant dir
+cd ~/CommGame/
+
+## add relevant dir to path
+#PATH=~/CommGame/videoStreamTests:$PATH
+
+# query for video device number corresponding to the webcam we intend to use
+VIDEODEVICE=$(v4l2-ctl --list-devices | grep -A 1 "C925e" | grep '/dev/video.*')
+
+# start audio channel
+AUDIOLOG=$RESULTDIR"/pair"$PAIRNO"_"$LABNAME"_freeConv_audioChannelLog.txt" 
+gnome-terminal --window -- nice -10 bash -ic "audioScript $PAIRNO $LABNAME 2>&1 | tee $AUDIOLOG; exec bash" &
+
+sleep 5s
+
+# start video channel
+VIDEOLOG=$RESULTDIR"/pair"$PAIRNO"_"$LABNAME"_freeConv_videoChannelLog.txt" 
+gnome-terminal --window -- bash -ic "videoScriptDirectCam $PAIRNO $LABNAME $VIDEODEVICE 2>&1 | tee $VIDEOLOG; exec bash"
+
+

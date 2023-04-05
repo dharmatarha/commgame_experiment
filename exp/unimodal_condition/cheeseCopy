@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# USAGE: cheeseCopy PAIRNO LABNAME
+# positional argments should be PAIRNO (int) and LABNAME (str, Gondor or Mordor)
+#
+# Script to copy the last recorded picture in /home/mordor/Pictures to its pair folder
+#
+
+echo -e "\nInput arg PAIRNO: "$1
+echo "Input arg LABNAME: "$2
+
+# check for input args
+if [[ $# -ne 2 ]] ; then
+    echo "Input args PAIRNO and LABNAME are required!"
+    exit 1
+fi
+if (( $1 > 0 && $1 < 1000)) ; then
+    PAIRNO=$1
+else
+    echo "Input arg PAIRNO should be integer between 1 and 999!"
+    exit 2
+fi    
+if [[ $2 == "Mordor" ]] || [[ $2 == "Gondor" ]] ; then
+    LABNAME=$2
+else
+    echo "Input arg LABNAME should be either Mordor or Gondor!"
+    exit 3
+fi
+
+# get latest file in ~/Pictures
+IMGFILE=$(find ~/Pictures/ -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
+echo -e "Latest file is "$IMGFILE
+
+# check for result dir for pair
+RESULTDIR="/home/mordor/CommGame/pair"$PAIRNO
+if [[ -d "$RESULTDIR" ]] ; then
+    echo -e "\nResult folder for pair "$PAIRNO" already exists."
+else
+    MKDIR_RETVAL=$(mkdir $RESULTDIR)
+    echo $MKDIR_RETVAL
+    if [[ -z "$MKDIR_RETVAL" ]]; then
+        echo -e "\nThere was no results directory for pair "$PAIRNO"!"
+        echo -e "\n! ! ! RUN TIMINGTEST IF YOU HAVE NOT DONE SO YET ! ! !"
+        echo -e "\nCreated results directory for pair "$PAIRNO
+    else
+        echo -e "\nFailed to create results directory at "$RESULTDIR"!"
+        exit 4
+    fi
+fi  
+
+# copy and rename
+NEWFILE="/home/mordor/CommGame/pair"$PAIRNO"/static_img_pair"$PAIRNO"_"$LABNAME".jpg"
+cp $IMGFILE $NEWFILE
+echo -e "\nCopied "$IMGFILE" to "$NEWFILE
+
+
+

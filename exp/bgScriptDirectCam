@@ -1,0 +1,83 @@
+#!/usr/bin/env octave
+#
+# Octave script for sarting the bargaining game.
+# To be called from the command line or via BG.sh
+#
+# Inputs are positional arguments pairNo (int, 1:999), labName (str, Mordor/Gondor), gameNo (int), type (int), conf (int) and strImgNo (int)
+# Outputs are saved into the results dir of the pair under /home/mordor/CommGame/
+#
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+gameNo = str2double(arg_list{3});
+devID = arg_list{4}
+
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]); 
+disp(['Arg gameNo: ', num2str(gameNo)]);
+disp(['Arg devID: ', devID]); 
+
+# game params inferred from "gameNo":
+if gameNo == 0
+    roundNo = 1;
+    type = 1;
+    conf = 1;
+    strImgNo = 1;
+elseif gameNo == 1
+    roundNo = 1;
+    type = 1;
+    conf = 2;
+    strImgNo = 1;
+elseif gameNo == 2
+    roundNo = 2;
+    type = 1;
+    conf = 3;
+    strImgNo = 4;
+elseif gameNo == 3
+    roundNo = 3;
+    type = 2;
+    conf = 1;
+    strImgNo = 4;    
+elseif gameNo == 4
+    roundNo = 4;
+    type = 2;
+    conf = 2;
+    strImgNo = 7;  
+elseif gameNo == 5
+    roundNo = 5;
+    type = 2;
+    conf = 3;
+    strImgNo = 7;  
+elseif gameNo == 6
+    roundNo = 6;
+    type = 2;
+    conf = 4;
+    strImgNo = 7;
+elseif gameNo == 7
+    roundNo = 7;
+    type = 2;
+    conf = 5;
+    strImgNo = 7;  
+end      
+
+disp(['Inferred game args, based on game number:']);
+disp(['Arg type: ', num2str(type)]);
+disp(['Arg conf: ', num2str(conf)]);
+disp(['Arg strImgNo: ', num2str(strImgNo)]);
+
+
+## target dir
+#cd ~/CommGame/bargaining_game/
+
+# player no from labName
+if strcmp(labName, "Mordor")
+    playerNo = 1;
+else
+    playerNo = 2;
+end
+
+# call game function
+bgMainDirectCam(pairNo, playerNo, labName, roundNo, 8, type, conf, strImgNo, devID);

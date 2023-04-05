@@ -1,0 +1,37 @@
+#!/usr/bin/env octave
+#
+# Octave script for audio recording + playback
+# To be called from the command line or via freeConv.sh
+#
+# Inputs are positional arguments pairNo (int, 1:999) and labName (str, Mordor/Gondor).
+# Outputs are saved into the results dir of the pair under /home/mordor/CommGame/
+#
+
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]);
+
+# params, settings
+audioMaxLength = 930;
+latency = 0.150;
+resultDir = ['/home/mordor/CommGame/pair', num2str(pairNo), '/'];
+wavFile = [resultDir, 'pair', num2str(pairNo), '_', labName, '_freeConv_audio.wav'];
+matFile = [resultDir, 'pair', num2str(pairNo), '_', labName, '_freeConv_audio.mat'];
+fs = 44100;  # MUST match fs defined in "audioChannel" 
+
+## target dir
+#cd ~/CommGame/videoStreamTests/psychtoolbox/
+
+# start audio channel
+[recordedAudio, perf] = audioChannel(latency, audioMaxLength);
+
+# save audio and performance variables
+save(matFile, 'perf', 'pairNo', 'labName');
+audiowrite(wavFile, recordedAudio', fs, 'BitsPerSample', 16);
+
+

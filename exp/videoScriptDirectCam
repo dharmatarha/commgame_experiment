@@ -1,0 +1,25 @@
+#!/usr/bin/env octave
+#
+# Octave script for playing the video from a webcam via a custom gstreamer pipeline.
+# To be called from the command line or via freeConv.sh
+#
+# Inputs are positional arguments pairNo (int, 1:999) and labName (str, Mordor/Gondor).
+# Outputs are saved into the results dir of the pair under /home/mordor/CommGame/
+#
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+devID = arg_list{3}
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]); 
+disp(['Arg devID: ', devID]); 
+
+## target dir
+#cd ~/CommGame/videoStreamTests/psychtoolbox/
+
+# start audio channel
+videoChannelDirectCam(pairNo, labName, devID);
+

@@ -1,0 +1,31 @@
+#!/usr/bin/env octave
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+gameCounter = str2double(arg_list{3});
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]);
+disp(['Arg gameCounter: ', num2str(gameCounter)]);
+
+# params, settings
+audioMaxLength = 960;
+latency = 0.150;
+resultDir = ['/home/mordor/CommGame/pair', num2str(pairNo), '/'];
+wavFile = [resultDir, 'pair', num2str(pairNo), '_', labName, '_BG', num2str(gameCounter), '_audio.wav'];
+matFile = [resultDir, 'pair', num2str(pairNo), '_', labName, '_BG', num2str(gameCounter), '_audio.mat'];
+fs = 44100;  # MUST match fs defined in "audioChannel" 
+
+## target dir
+#cd ~/CommGame/videoStreamTests/psychtoolbox/
+
+# start audio channel
+[recordedAudio, perf] = audioChannel(latency, audioMaxLength);
+
+# save audio and performance variables
+save(matFile, 'perf', 'pairNo', 'labName');
+audiowrite(wavFile, recordedAudio', fs, 'BitsPerSample', 16);
+
+

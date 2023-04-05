@@ -1,0 +1,22 @@
+#!/usr/bin/env octave
+#
+# Octave script for editing audio and video for playback of freeConv.
+# To be called from the command line, in return, it calls cutAudioFreeConv.m.
+#
+# Inputs are positional arguments pairNo (int, 1:999) and labName (str, Mordor/Gondor).
+# Outputs are saved into the results dir of the pair under /home/mordor/CommGame/
+#
+
+1;
+
+# parse input args
+arg_list = argv();
+pairNo = str2double(arg_list{1});
+labName = arg_list{2};
+disp(['Arg pairNo: ', num2str(pairNo)]);
+disp(['Arg labName: ', labName]);
+
+# start audio channel
+cutAudioFreeConv(pairNo, labName)
+
+
