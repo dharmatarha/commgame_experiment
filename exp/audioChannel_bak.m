@@ -28,8 +28,7 @@ function [recordedaudio, perf] = audioChannel(varargin)
 % perf                 - Struct, storing various performance-related variables. 
 %
 %
-% USED FROM 2023.05.02
-% SAVES ADDITIONAL 'GetStatus' OUTPUT
+% USED UNTIL 2023.05.02.
 
 
 %% Input checks
@@ -69,7 +68,7 @@ disp([char(10), 'Called audioChannel with input args: ',...
 
 % store diagnostic timestamps in a huge array:
 tc = 0;
-tstats = zeros(10, 1000000);  % with a captureQuantum of  ~3 ms, this is enough for ~50 mins
+tstats = zeros(7, 1000000);  % with a captureQuantum of  ~3 ms, this is enough for ~50 mins
 
 % PsychPortAudio device and other options
 mode = 3;  % recording + playback
@@ -326,7 +325,7 @@ try
         % Log some timing samples:
         tc = tc + 1;
         if tc <= size(tstats, 2)
-            tstats(:, tc) = [ s1.ElapsedOutSamples ; s1.CurrentStreamTime ; fetchDelay; nextSampleETASecs - s1.CurrentStreamTime; offset; cstarttime; GetSecs; s1.PositionSecs; s1.SchedulePosition; s1.BufferSize];
+            tstats(:, tc) = [ s1.ElapsedOutSamples ; s1.CurrentStreamTime ; fetchDelay; nextSampleETASecs - s1.CurrentStreamTime; offset; cstarttime; GetSecs];
         endif        
         
         % Done. Next iteration...

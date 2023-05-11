@@ -3,9 +3,6 @@ function cutAudioFreeConv(pairNo, localLab)
 %
 % USAGE: cutAudioFreeConv(pairNo, localLab)
 %
-% NEW VERSION USED FROM 2023.05.02.
-% CONSIDERS UNEQUAL SAMPLING RATES
-%
 % In the free conversation task, participants' microphone channels are recorded
 % separately at the two control PCs. Following the task, for the replay 
 % condition, we need to copy and edit the audio recordings so that we have one 
@@ -19,6 +16,8 @@ function cutAudioFreeConv(pairNo, localLab)
 %           {"Mordor", "Gondor"}.
 %
 % The output is the edited, synched audio file.
+%
+% USED UNTIL 2023.05.02.
 %
 
 
@@ -51,11 +50,8 @@ audioDelay = 0.190;  % this value removes the echo from the remote audio, but do
 fs = 44100;
 
 % threshold for detecting and correcting for harmful underflows in the recordings
-timeDiffThr = 0.020; 
-missingSampleThr = 220;
-
-% allowed deviation from nominal sampling frequency, in Hz
-samplingTol = 0.5;
+timeDiffThr = 0.002; 
+missingSampleThr = 89;
 
 % hardcoded location for the pair folder on both local and remote PCs, only depending on the pair number
 baseFolder = ['/home/mordor/CommGame/pair', num2str(pairNo), '/'];
@@ -199,58 +195,6 @@ if exist("remoteAudioRepair", "var")
         end
     end
 end   
-
-
-%% Estimate real (empirical) sampling frequency 
-
-% LOCAL
-% estimate sampling frequency based on the size of the (repaired) audio
-% data and the total time elapsed while recording
-streamTimesL = localTstats(2, :)';
-totalSamplesL =size(localAudio, 1);
-totalTimeL = streamTimesL(end)-streamTimesL(1);
-fsEmpLocal = totalSamplesL/totalTimeL;
-disp(['Estimated sampling frequency for LOCAL audio: ',... 
-    num2str(fsEmpLocal), ' Hz']);
-
-% REMOTE
-streamTimesR = remoteTstats(2, :)';
-totalSamplesR =size(remoteAudio, 1);
-totalTimeR = streamTimesR(end)-streamTimesR(1);
-fsEmpRemote = totalSamplesR/totalTimeR;
-disp(['Estimated sampling frequency for REMOTE audio: ',... 
-    num2str(fsEmpRemote), ' Hz']);
-
-
-%% Resample audio channels, if needed
-
-% LOCAL
-if abs(fsEmpLocal - fs) > samplingTol
-    tx = 0:1/fsEmpLocal:totalTimeL;
-    data = localAudio;
-    if numel(tx) ~= size(data, 1)
-        tx = tx(1:size(data, 1));
-    end
-    newFs = fs;
-    resampledLocalAudio = resample(data, tx, newFs);
-    disp(['Resampled LOCAL audio to nominal (', num2str(fs),... 
-        ' Hz) sampling frequency']);
-    localAudio = resampledLocalAudio;
-end
-
-% REMOTE
-if abs(fsEmpRemote - fs) > samplingTol
-    tx = 0:1/fsEmpRemote:totalTimeR;
-    data = remoteAudio;
-    if numel(tx) ~= size(data, 1)
-        tx = tx(1:size(data, 1));
-    end
-    newFs = fs;
-    resampledRemoteAudio = resample(data, tx, newFs);
-    disp(['Resampled REMOTE audio to nominal (', num2str(fs),... 
-    ' Hz) sampling frequency']);
-    remoteAudio = resampledRemoteAudio;
-end
 
 
 %% Edit audio to video start:
