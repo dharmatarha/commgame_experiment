@@ -1,0 +1,15 @@
+# Created by Octave 5.2.0, Tue Apr 12 12:43:48 2022 CEST <mordor@maingondor>
+# name: selects
+# type: matrix
+# rows: 8
+# columns: 2
+ 1 1
+ 2 2
+ 3 2
+ 4 1
+ 5 1
+ 6 1
+ 7 1
+ 8 2
+
+
