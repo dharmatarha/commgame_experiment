@@ -9,6 +9,6 @@ The BOSS database is released under the [Creative Commons Attribution-Share Alik
 [Horst, J. S., & Hout, M. C.  (2015).  The Novel Object and Unusual Name (NOUN) Database: A collection of novel images for use in experimental research.  Behavior Research Methods, 48, 1393-1409. doi: 10.3758/s13428-015-0647-3.](https://core.ac.uk/download/pdf/30612763.pdf)  
 The NOUN database is freely available for anyone.
 
-For the questionnaires following each task we rely on the great [MATLAB_PT_Questionnaire](https://github.com/Toshinaki/MATLAB_PTB_Questionnaire) tool: 
-TOSHINAKI et al.. (2016). MATLAB_PTB_Questionnaire: 2016/08/06 first release. Zenodo. 10.5281/zenodo.59760
+For the questionnaires following each task we rely on the great [MATLAB_PT_Questionnaire](https://github.com/Toshinaki/MATLAB_PTB_Questionnaire) tool:  
+TOSHINAKI et al.. (2016). MATLAB_PTB_Questionnaire: 2016/08/06 first release. Zenodo. 10.5281/zenodo.59760  
 Its license and readme are under `/exp/PTB_Questionnaire_scriptsV3`. It shares the GPL3 license.
