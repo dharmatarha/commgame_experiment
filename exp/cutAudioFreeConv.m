@@ -36,6 +36,8 @@ end
 
 %% Basic params
 
+pkg load signal;
+
 % remote lab name
 if strcmp(localLab, 'Mordor')
     remoteLab = 'Gondor';
@@ -226,13 +228,14 @@ disp(['Estimated sampling frequency for REMOTE audio: ',...
 
 % LOCAL
 if abs(fsEmpLocal - fs) > samplingTol
-    tx = 0:1/fsEmpLocal:totalTimeL;
+    % tx = 0:1/fsEmpLocal:totalTimeL;
     data = localAudio;
-    if numel(tx) ~= size(data, 1)
-        tx = tx(1:size(data, 1));
-    end
+    % if numel(tx) ~= size(data, 1)
+    %     tx = tx(1:size(data, 1));
+    % end
     newFs = fs;
-    resampledLocalAudio = resample(data, tx, newFs);
+    resampledLocalAudio = resample(data, newFs, round(fsEmpLocal));
+    % resampledLocalAudio = resample(data, tx, newFs);  % only works in Matlab
     disp(['Resampled LOCAL audio to nominal (', num2str(fs),... 
         ' Hz) sampling frequency']);
     localAudio = resampledLocalAudio;
@@ -240,13 +243,14 @@ end
 
 % REMOTE
 if abs(fsEmpRemote - fs) > samplingTol
-    tx = 0:1/fsEmpRemote:totalTimeR;
+    % tx = 0:1/fsEmpRemote:totalTimeR;
     data = remoteAudio;
-    if numel(tx) ~= size(data, 1)
-        tx = tx(1:size(data, 1));
-    end
+    % if numel(tx) ~= size(data, 1)
+    %     tx = tx(1:size(data, 1));
+    % end
     newFs = fs;
-    resampledRemoteAudio = resample(data, tx, newFs);
+    resampledRemoteAudio = resample(data, newFs, round(fsEmpRemote));
+    % resampledRemoteAudio = resample(data, tx, newFs);
     disp(['Resampled REMOTE audio to nominal (', num2str(fs),... 
     ' Hz) sampling frequency']);
     remoteAudio = resampledRemoteAudio;
